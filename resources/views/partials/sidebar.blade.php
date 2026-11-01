@@ -21,7 +21,7 @@
             </svg>
             <span>Jadwal</span>
         </a>
-        <a href="#statistik" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-muted transition hover:bg-background hover:text-primary-dark">
+        <a href="{{ route('statistik') }}" @if (request()->routeIs('statistik')) aria-current="page" @endif @class(['flex items-center gap-3 rounded-2xl px-4 py-3', 'bg-primary-soft font-semibold text-primary' => request()->routeIs('statistik'), 'text-muted transition hover:bg-background hover:text-primary-dark' => ! request()->routeIs('statistik')])>
             <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 20V14M8 20V9M13 20v-5M18 20V7M23 20V3"/>
                 <path d="m3 10 5-5 5 4 8-7"/>

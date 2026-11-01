@@ -27,14 +27,14 @@
             </span>
             <span @class(['text-sm' => true, 'font-semibold' => request()->routeIs('jadwal')])>Jadwal</span>
         </a>
-        <a href="#statistik" class="flex flex-col items-center gap-1 pb-2 text-muted">
-            <span class="flex h-10 w-[5.5rem] items-center justify-center">
+        <a href="{{ route('statistik') }}" @if (request()->routeIs('statistik')) aria-current="page" @endif class="flex flex-col items-center gap-1 pb-2 {{ request()->routeIs('statistik') ? 'text-primary' : 'text-muted' }}">
+            <span @class(['flex h-10 w-[5.5rem] items-center justify-center rounded-full' => true, 'bg-primary-soft' => request()->routeIs('statistik')])>
                 <svg aria-hidden="true" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 20V14M8 20V9M13 20v-5M18 20V7M23 20V3"/>
                     <path d="m3 10 5-5 5 4 8-7"/>
                 </svg>
             </span>
-            <span class="text-sm">Statistik</span>
+            <span @class(['text-sm' => true, 'font-semibold' => request()->routeIs('statistik')])>Statistik</span>
         </a>
     </div>
 </nav>
