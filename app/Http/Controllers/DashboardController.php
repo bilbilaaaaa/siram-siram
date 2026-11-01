@@ -3,11 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        // Parameter status hanya untuk pengembangan dan akan dihapus.
+        $connectionStatus = $request->query('status', 'terhubung');
+        if (! in_array($connectionStatus, ['terhubung', 'menghubungkan', 'terputus'], true)) {
+            $connectionStatus = 'terhubung';
+        }
+
         $sensor = [
             'soil_moisture' => 50,
             'temperature' => 28,
@@ -15,7 +22,11 @@ class DashboardController extends Controller
         ];
 
         $status = [
-            'connection' => 'Terhubung',
+            'connection' => match ($connectionStatus) {
+                'menghubungkan' => 'Menghubungkan ulang',
+                'terputus' => 'Terputus',
+                default => 'Terhubung',
+            },
             'soil_moisture' => 'Normal',
             'watering_schedule' => 'Terjadwal',
             'watering' => 'Tidak Menyiram',
@@ -24,6 +35,8 @@ class DashboardController extends Controller
             'next_schedule_duration' => '2 menit',
         ];
 
-        return view('pages.dashboard', compact('sensor', 'status'));
+        $koneksi = ['status' => $connectionStatus];
+
+        return view('pages.dashboard', compact('sensor', 'status', 'koneksi'));
     }
 }

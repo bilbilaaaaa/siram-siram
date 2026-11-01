@@ -25,13 +25,13 @@
 
         <div class="mt-6 flex items-center justify-between gap-3">
             <h2 class="text-lg font-semibold">Kebun TOGA saya</h2>
-            <span class="inline-flex items-center gap-2 rounded-full bg-primary-soft px-4 py-2 text-sm font-semibold text-primary">
+            <a href="{{ route('koneksi') }}" class="inline-flex items-center gap-2 rounded-full {{ ($koneksi['status'] ?? 'terhubung') === 'terputus' ? 'bg-accent-red-soft text-accent-red' : (($koneksi['status'] ?? 'terhubung') === 'menghubungkan' ? 'bg-accent-amber-soft text-accent-amber' : 'bg-primary-soft text-primary') }} px-4 py-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                 <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M5 9.5a10.5 10.5 0 0 1 14 0M8 12.5a6 6 0 0 1 8 0M11 15.5a1.5 1.5 0 0 1 2 0"/>
                     <path d="M12 19h.01"/>
                 </svg>
                 {{ $status['connection'] ?? '—' }}
-            </span>
+            </a>
         </div>
     </header>
 

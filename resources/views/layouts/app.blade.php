@@ -17,13 +17,15 @@
         <div class="min-h-dvh lg:flex">
             @include('partials.sidebar')
 
-            <main class="min-w-0 flex-1 pb-28 lg:ml-64 lg:pb-10">
+            <main @class(['min-w-0 flex-1 lg:ml-64 lg:pb-10', 'pb-28' => ! View::hasSection('hide-bottom-nav')])>
                 <div class="mx-auto w-full max-w-5xl px-6 pb-8 pt-6 sm:px-8 lg:px-10 lg:pt-10">
                     @yield('content')
                 </div>
             </main>
         </div>
 
-        @include('partials.bottom-nav')
+        @unless (View::hasSection('hide-bottom-nav'))
+            @include('partials.bottom-nav')
+        @endunless
     </body>
 </html>
