@@ -14,7 +14,7 @@
             </svg>
             <span>Kontrol</span>
         </a>
-        <a href="#jadwal" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-muted transition hover:bg-background hover:text-primary-dark">
+        <a href="{{ route('jadwal') }}" @if (request()->routeIs('jadwal')) aria-current="page" @endif @class(['flex items-center gap-3 rounded-2xl px-4 py-3', 'bg-primary-soft font-semibold text-primary' => request()->routeIs('jadwal'), 'text-muted transition hover:bg-background hover:text-primary-dark' => ! request()->routeIs('jadwal')])>
             <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="5" width="18" height="16" rx="2"/>
                 <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01"/>

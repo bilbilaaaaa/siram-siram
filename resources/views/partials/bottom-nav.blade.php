@@ -18,14 +18,14 @@
             </span>
             <span @class(['text-sm' => true, 'font-semibold' => request()->routeIs('kontrol')])>Kontrol</span>
         </a>
-        <a href="#jadwal" class="flex flex-col items-center gap-1 pb-2 text-muted">
-            <span class="flex h-10 w-[5.5rem] items-center justify-center">
+        <a href="{{ route('jadwal') }}" @if (request()->routeIs('jadwal')) aria-current="page" @endif class="flex flex-col items-center gap-1 pb-2 {{ request()->routeIs('jadwal') ? 'text-primary' : 'text-muted' }}">
+            <span @class(['flex h-10 w-[5.5rem] items-center justify-center rounded-full' => true, 'bg-primary-soft' => request()->routeIs('jadwal')])>
                 <svg aria-hidden="true" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="5" width="18" height="16" rx="2"/>
                     <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01M16 17h.01"/>
                 </svg>
             </span>
-            <span class="text-sm">Jadwal</span>
+            <span @class(['text-sm' => true, 'font-semibold' => request()->routeIs('jadwal')])>Jadwal</span>
         </a>
         <a href="#statistik" class="flex flex-col items-center gap-1 pb-2 text-muted">
             <span class="flex h-10 w-[5.5rem] items-center justify-center">
