@@ -33,7 +33,8 @@ class DashboardController extends Controller
             ->sortBy(fn (array $kandidat): int => $kandidat['waktu_mulai']->getTimestamp())
             ->first();
 
-        $connectionStatus = $perangkat->statusKoneksi();
+        $statusKoneksiPerangkat = $perangkat->statusKoneksi();
+        $connectionStatus = $statusKoneksiPerangkat;
 
         if (app()->environment('local')) {
             // This status override is only for local development.
@@ -50,6 +51,10 @@ class DashboardController extends Controller
             'air_humidity' => $pembacaanTerakhir?->kelembapan_udara,
         ];
 
+        // Riwayat yang masih terbuka tidak berarti pompa menyala jika perangkat sudah terputus.
+        $sedangMenyiram = $statusKoneksiPerangkat !== 'terputus'
+            && $perangkat->riwayatPenyiraman()->whereNull('selesai_pada')->exists();
+
         $status = [
             'connection' => match ($connectionStatus) {
                 'menghubungkan' => 'Menghubungkan ulang',
@@ -58,9 +63,7 @@ class DashboardController extends Controller
             },
             'soil_moisture' => $pengaturan->statusKelembapanTanah($kelembapanTanah) ?? '—',
             'watering_schedule' => ucfirst($pengaturan->mode),
-            'watering' => $perangkat->riwayatPenyiraman()->whereNull('selesai_pada')->exists()
-                ? 'Menyiram'
-                : 'Tidak Menyiram',
+            'watering' => $sedangMenyiram ? 'Menyiram' : 'Tidak Menyiram',
             'next_watering_in' => $jadwalBerikutnya === null
                 ? null
                 : $this->formatJarakWaktu($jadwalBerikutnya['waktu_mulai']),
