@@ -3,12 +3,12 @@
         Mode Manual • Anda menentukan kapan penyiraman dimulai dan dihentikan.
     </p>
 
-    <div data-manual-state="idle">
+    <div data-manual-state="idle" @class(['hidden' => $pompaManual])>
         <section aria-labelledby="manual-pump-title" class="rounded-card bg-surface p-6 shadow-card">
             <div class="flex items-center justify-between gap-3">
                 <h2 id="manual-pump-title" class="text-xl font-semibold">Kontrol pompa</h2>
                 <span class="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-semibold text-muted">
-                    Tidak Menyiram
+                    {{ $pompaManual ? 'Menyiram' : 'Tidak Menyiram' }}
                 </span>
             </div>
 
@@ -24,7 +24,7 @@
 
             <div class="flex items-center justify-between gap-3 text-base">
                 <span class="text-muted">Kelembapan tanah</span>
-                <span class="text-right font-semibold">50% · Normal</span>
+                <span class="text-right font-semibold">{{ $kelembapanTanah ?? '—' }}% · {{ $statusKelembapanTanah ?? '—' }}</span>
             </div>
         </section>
 
@@ -50,7 +50,7 @@
         </div>
     </div>
 
-    <div data-manual-state="watering" class="hidden">
+    <div data-manual-state="watering" @class(['hidden' => ! $pompaManual])>
         <section aria-labelledby="manual-active-pump-title" class="rounded-card bg-surface p-6 shadow-card">
             <div class="flex items-center justify-between gap-3">
                 <h2 id="manual-active-pump-title" class="text-xl font-semibold">Kontrol pompa</h2>

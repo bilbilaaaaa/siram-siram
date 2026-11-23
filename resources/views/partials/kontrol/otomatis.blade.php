@@ -7,7 +7,7 @@
         <div class="flex items-center justify-between gap-3">
             <h2 id="automatic-pump-title" class="text-xl font-semibold">Kontrol pompa</h2>
             <span class="shrink-0 rounded-full bg-background px-4 py-2 text-sm font-semibold text-muted">
-                Tidak Menyiram
+                {{ $pompaManual ? 'Menyiram' : 'Tidak Menyiram' }}
             </span>
         </div>
 
@@ -23,7 +23,7 @@
 
         <div class="flex items-center justify-between gap-3 text-base">
             <span class="text-muted">Kelembapan tanah</span>
-            <span class="text-right font-semibold">50% · Normal</span>
+            <span class="text-right font-semibold">{{ $kelembapanTanah ?? '—' }}% · {{ $statusKelembapanTanah ?? '—' }}</span>
         </div>
     </section>
 
@@ -37,16 +37,22 @@
                 <div>
                     <h2 class="text-lg font-semibold">Tanaman disiram saat membutuhkan</h2>
                     <p class="mt-1 text-base leading-relaxed">
-                        Pompa menyala saat tanah kering (&lt;30%) dan berhenti saat kelembapan mencapai 50%.
+                        Pompa menyala saat tanah kering (&lt;{{ $batasKering }}%) dan berhenti saat kelembapan mencapai {{ $batasBasah }}%.
                     </p>
                 </div>
             </div>
         </aside>
 
         <section aria-labelledby="automatic-moisture-title" class="rounded-card bg-surface p-6 shadow-card">
-            <h2 id="automatic-moisture-title" class="text-xl font-semibold">Tanah masih cukup lembap</h2>
+            <h2 id="automatic-moisture-title" class="text-xl font-semibold">
+                {{ $statusKelembapanTanah === 'Kering' ? 'Tanah membutuhkan penyiraman' : 'Tanah masih cukup lembap' }}
+            </h2>
             <p class="mt-3 text-base leading-relaxed text-muted">
-                Pembacaan saat ini 50%. Pompa tetap mati.
+                @if ($kelembapanTanah === null)
+                    Belum ada pembacaan sensor.
+                @else
+                    Pembacaan saat ini {{ $kelembapanTanah }}%.
+                @endif
             </p>
             <div class="mt-3 flex items-center justify-between gap-3 text-base">
                 <span class="text-muted">Kontrol manual</span>

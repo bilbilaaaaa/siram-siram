@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Perangkat;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -9,10 +10,16 @@ class KoneksiController extends Controller
 {
     public function index(Request $request): View
     {
-        // Parameter status hanya untuk pengembangan dan akan dihapus.
-        $status = $request->query('status', 'terhubung');
-        if (! in_array($status, ['terhubung', 'menghubungkan', 'terputus'], true)) {
-            $status = 'terhubung';
+        $perangkat = Perangkat::firstOrFail();
+        $status = $perangkat->statusKoneksi();
+
+        if (app()->environment('local')) {
+            // This status override is only for local development.
+            $statusPengembangan = $request->query('status');
+
+            if (in_array($statusPengembangan, ['terhubung', 'menghubungkan', 'terputus'], true)) {
+                $status = $statusPengembangan;
+            }
         }
 
         $stateContent = [
@@ -22,7 +29,6 @@ class KoneksiController extends Controller
                 'info' => 'Ponsel dan ESP32 berada di jaringan Wi-Fi yang sama. Data sensor diperbarui otomatis.',
                 'label_tombol' => 'Periksa Koneksi',
                 'label_waktu' => 'Terakhir terhubung',
-                'terakhir' => 'Hari ini, 07.40',
             ],
             'menghubungkan' => [
                 'judul' => 'Menghubungkan Ulang',
@@ -30,7 +36,6 @@ class KoneksiController extends Controller
                 'info' => 'Jangan tutup aplikasi. Perintah penyiraman ditunda hingga koneksi tersedia kembali.',
                 'label_tombol' => 'Menghubungkan...',
                 'label_waktu' => 'Koneksi terakhir',
-                'terakhir' => 'Hari ini, 07.35',
             ],
             'terputus' => [
                 'judul' => 'Terputus',
@@ -38,15 +43,22 @@ class KoneksiController extends Controller
                 'info' => 'Tidak terhubung ke SiramSiram. Perintah tidak dapat dikirim.',
                 'label_tombol' => 'Coba Hubungkan Lagi',
                 'label_waktu' => 'Koneksi terakhir',
-                'terakhir' => 'Hari ini, 07.35',
             ],
         ];
 
+        $terakhirTerhubung = $perangkat->terakhir_terhubung;
+        $terakhir = $terakhirTerhubung === null
+            ? 'Belum pernah terhubung'
+            : ($terakhirTerhubung->isToday()
+                ? 'Hari ini, '.$terakhirTerhubung->locale('id')->translatedFormat('H.i')
+                : $terakhirTerhubung->locale('id')->translatedFormat('D, j M Y · H.i'));
+
         $koneksi = [
             'status' => $status,
-            'ip' => '192.168.1.120',
-            'wifi' => 'KebunRumah',
-            'perangkat' => 'ESP32 · Kebun TOGA',
+            'ip' => $perangkat->ip_address ?? '—',
+            'wifi' => $perangkat->nama_wifi ?? '—',
+            'perangkat' => $perangkat->nama,
+            'terakhir' => $terakhir,
             ...$stateContent[$status],
         ];
 

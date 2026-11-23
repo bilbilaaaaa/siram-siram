@@ -99,12 +99,20 @@ if (canvas) {
         dateRange.textContent = dataset.label;
         rangeBadge.textContent = dataset.soil_moisture_range;
         readingCount.textContent = dataset.reading_count;
-        average.textContent = `${dataset.average_soil_moisture}%`;
-        minimumTemperature.textContent = `${dataset.minimum_temperature}°C`;
-        maximumTemperature.textContent = `${dataset.maximum_temperature}°C`;
+        average.textContent = dataset.average_soil_moisture === null
+            ? '—'
+            : `${dataset.average_soil_moisture}%`;
+        minimumTemperature.textContent = dataset.minimum_temperature === null
+            ? '—'
+            : `${dataset.minimum_temperature}°C`;
+        maximumTemperature.textContent = dataset.maximum_temperature === null
+            ? '—'
+            : `${dataset.maximum_temperature}°C`;
 
-        const values = dataset.soil_moisture.values;
-        summary.textContent = `Kelembapan tanah ${values.length} pembacaan: minimum ${Math.min(...values)}%, maksimum ${Math.max(...values)}%, rata-rata ${dataset.average_soil_moisture}%.`;
+        const values = dataset.soil_moisture.values.filter((value) => value !== null);
+        summary.textContent = values.length === 0
+            ? 'Belum ada pembacaan sensor pada periode ini.'
+            : `Kelembapan tanah ${dataset.reading_count} pembacaan: minimum ${Math.min(...values)}%, maksimum ${Math.max(...values)}%, rata-rata ${dataset.average_soil_moisture}%.`;
 
         periodButtons.forEach((button) => {
             const isActive = button.dataset.statisticsPeriod === period;

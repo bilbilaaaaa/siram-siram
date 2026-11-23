@@ -26,6 +26,23 @@ class PengaturanSistem extends Model
         ];
     }
 
+    public function statusKelembapanTanah(?int $kelembapan): ?string
+    {
+        if ($kelembapan === null) {
+            return null;
+        }
+
+        if ($kelembapan < $this->batas_kering) {
+            return 'Kering';
+        }
+
+        if ($kelembapan >= $this->batas_basah) {
+            return 'Basah';
+        }
+
+        return 'Normal';
+    }
+
     public function perangkat(): BelongsTo
     {
         return $this->belongsTo(Perangkat::class);

@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Perangkat extends Model
 {
+    public const KONEKSI_TERHUBUNG_DETIK = 60;
+
+    public const KONEKSI_MENGHUBUNGKAN_DETIK = 180;
+
     protected $table = 'perangkat';
 
     protected $fillable = [
@@ -24,6 +28,25 @@ class Perangkat extends Model
             'terakhir_terhubung' => 'datetime',
             'simulasi' => 'boolean',
         ];
+    }
+
+    public function statusKoneksi(): string
+    {
+        if ($this->terakhir_terhubung === null) {
+            return 'terputus';
+        }
+
+        $detikSejakTerhubung = now()->getTimestamp() - $this->terakhir_terhubung->getTimestamp();
+
+        if ($detikSejakTerhubung < self::KONEKSI_TERHUBUNG_DETIK) {
+            return 'terhubung';
+        }
+
+        if ($detikSejakTerhubung <= self::KONEKSI_MENGHUBUNGKAN_DETIK) {
+            return 'menghubungkan';
+        }
+
+        return 'terputus';
     }
 
     public function pembacaanSensor(): HasMany

@@ -65,9 +65,9 @@
             <p class="mt-3 text-base text-muted">Rata-rata 5 pembacaan terakhir</p>
 
             <div class="mt-4 flex justify-between gap-2 text-xs font-medium sm:text-sm">
-                <span class="text-accent-amber">Kering &lt;30%</span>
-                <span class="text-primary">Normal 30–&lt;70%</span>
-                <span class="text-accent-blue">Basah &gt;70%</span>
+                <span class="text-accent-amber">Kering &lt;{{ $pengaturan->batas_kering }}%</span>
+                <span class="text-primary">Normal {{ $pengaturan->batas_kering }}–&lt;{{ $pengaturan->batas_basah }}%</span>
+                <span class="text-accent-blue">Basah ≥{{ $pengaturan->batas_basah }}%</span>
             </div>
         </article>
 
@@ -110,7 +110,11 @@
             </div>
 
             <p class="mt-4 text-base leading-6 text-muted">
-                Penyiraman berikutnya dalam {{ $status['next_watering_in'] ?? '—' }}
+                @if ($status['next_watering_in'] === null)
+                    Belum ada jadwal aktif
+                @else
+                    Penyiraman berikutnya dalam {{ $status['next_watering_in'] }}
+                @endif
             </p>
             <div class="mt-4 flex items-center justify-between gap-3 text-base">
                 <span class="text-muted">Jadwal berikutnya</span>
@@ -122,6 +126,6 @@
     </section>
 
     <p class="mt-6 text-center text-sm text-muted sm:text-base">
-        Terakhir diperbarui • {{ now()->locale('id')->translatedFormat('D, j M Y · H.i') }}
+        Terakhir diperbarui • {{ $terakhirDiperbarui?->locale('id')->translatedFormat('D, j M Y · H.i') ?? 'Belum ada pembacaan' }}
     </p>
 @endsection

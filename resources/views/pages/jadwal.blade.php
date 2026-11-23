@@ -10,19 +10,13 @@
         $formDays = is_array($oldDays) ? $oldDays : [];
         $showScheduleDialog = $errors->any() || session()->has('error');
         $activeSchedules = array_filter($schedules, fn ($schedule) => (bool) ($schedule['aktif'] ?? false));
-        $nextSchedule = reset($activeSchedules) ?: null;
+        $nextSchedule = $jadwalBerikutnya;
         $activeCount = count($activeSchedules);
         $inactiveCount = count($schedules) - $activeCount;
         $nextMinutes = null;
 
-        if ($nextSchedule && ! empty($nextSchedule['jam'])) {
-            $nextAt = now()->setTimeFromTimeString($nextSchedule['jam']);
-
-            if ($nextAt->lessThanOrEqualTo(now())) {
-                $nextAt->addDay();
-            }
-
-            $nextMinutes = max(1, (int) now()->diffInMinutes($nextAt));
+        if ($nextSchedule && ! empty($nextSchedule['waktu_mulai'])) {
+            $nextMinutes = max(1, (int) ceil(now()->diffInMinutes($nextSchedule['waktu_mulai'])));
         }
     @endphp
 
@@ -48,7 +42,12 @@
         </div>
         <p class="mt-4 text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
             @if ($nextSchedule && $nextMinutes !== null)
-                @if ($nextMinutes >= 60)
+                @if ($nextMinutes >= 1440)
+                    {{ intdiv($nextMinutes, 1440) }} hari
+                    @if (intdiv($nextMinutes % 1440, 60) > 0)
+                        {{ intdiv($nextMinutes % 1440, 60) }} jam
+                    @endif
+                @elseif ($nextMinutes >= 60)
                     {{ intdiv($nextMinutes, 60) }} jam {{ $nextMinutes % 60 }} menit
                 @else
                     Dalam {{ $nextMinutes }} menit
@@ -105,7 +104,7 @@
 
                     <div class="mt-5 flex items-center justify-between gap-3">
                         <p class="min-w-0 text-base leading-relaxed text-muted">{{ $daysText }}</p>
-                        @if ($schedule === $nextSchedule)
+                        @if (($schedule['id'] ?? null) === ($nextSchedule['id'] ?? null))
                             <span class="shrink-0 text-sm font-semibold text-primary">Berikutnya</span>
                         @elseif (! $isActive)
                             <span class="shrink-0 text-sm text-muted">Nonaktif</span>
