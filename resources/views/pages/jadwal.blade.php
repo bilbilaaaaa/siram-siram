@@ -6,8 +6,18 @@
     @php
         $schedules = array_values(is_array($jadwal ?? null) ? $jadwal : []);
         $weekDays = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
-        $oldDays = old('hari', $weekDays);
-        $formDays = is_array($oldDays) ? $oldDays : [];
+        $oldDays = old('hari', range(1, 7));
+        $formDays = is_array($oldDays) ? array_map('intval', $oldDays) : [];
+        $oldScheduleId = old('jadwal_id');
+        $oldSchedule = collect($schedules)->firstWhere('id', (int) $oldScheduleId);
+        $formAction = $oldSchedule['url_ubah'] ?? route('jadwal.store');
+        $dayError = $errors->first('hari');
+
+        if ($dayError === '') {
+            $dayError = collect($errors->getMessages())
+                ->first(fn ($messages, $field) => str_starts_with($field, 'hari.'))[0] ?? '';
+        }
+
         $showScheduleDialog = $errors->any() || session()->has('error');
         $activeSchedules = array_filter($schedules, fn ($schedule) => (bool) ($schedule['aktif'] ?? false));
         $nextSchedule = $jadwalBerikutnya;
@@ -75,7 +85,7 @@
             @foreach ($schedules as $index => $schedule)
                 @php
                     $isActive = (bool) ($schedule['aktif'] ?? false);
-                    $days = $schedule['hari'] ?? [];
+                    $days = $schedule['hari_label'] ?? [];
                     $daysText = is_array($days) ? implode(' · ', $days) : (string) $days;
                 @endphp
 
@@ -94,8 +104,12 @@
 
                         <button
                             type="button"
+                            role="switch"
+                            aria-checked="{{ $isActive ? 'true' : 'false' }}"
                             aria-label="{{ $isActive ? 'Nonaktifkan' : 'Aktifkan' }} jadwal {{ $schedule['jam'] ?? '' }}"
-                            aria-pressed="{{ $isActive ? 'true' : 'false' }}"
+                            data-schedule-toggle
+                            data-jam="{{ $schedule['jam'] ?? '' }}"
+                            data-url="{{ $schedule['url_aktif'] }}"
                             class="relative h-12 w-[4.875rem] shrink-0 rounded-full {{ $isActive ? 'bg-primary' : 'bg-border' }}"
                         >
                             <span class="absolute top-1 h-10 w-10 rounded-full bg-surface shadow-sm transition-all {{ $isActive ? 'right-1' : 'left-1' }}"></span>
@@ -119,6 +133,8 @@
         Waktu perangkat • {{ now()->locale('id')->translatedFormat('D, j M Y · H.i') }}
     </p>
 
+    <p id="schedule-toggle-message" aria-live="polite" class="mt-3 hidden text-sm text-accent-red"></p>
+
     <div class="mt-1 flex justify-end">
         <button
             type="button"
@@ -134,14 +150,17 @@
     </div>
 
     <dialog id="schedule-dialog" aria-labelledby="schedule-dialog-title" class="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-y-auto bg-background p-0 text-primary-dark backdrop:bg-primary-dark/50 lg:m-auto lg:h-auto lg:max-h-[90dvh] lg:max-w-xl lg:rounded-card lg:shadow-card">
-        <form id="schedule-form" class="flex min-h-dvh flex-col px-6 pb-6 pt-10 sm:px-8 lg:min-h-0 lg:p-8">
+        <form id="schedule-form" action="{{ $formAction }}" method="POST" class="flex min-h-dvh flex-col px-6 pb-6 pt-10 sm:px-8 lg:min-h-0 lg:p-8">
+            @csrf
+            <input id="schedule-method" type="hidden" name="_method" value="PUT" @disabled($oldSchedule === null)>
+            <input id="schedule-id" type="hidden" name="jadwal_id" value="{{ old('jadwal_id', $oldSchedule['id'] ?? '') }}">
             <header class="flex items-center gap-5">
                 <button type="button" data-close-schedule aria-label="Kembali" class="flex h-9 w-9 shrink-0 items-center justify-center text-primary-dark focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
                     <svg aria-hidden="true" class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 12H5M12 19l-7-7 7-7"/>
                     </svg>
                 </button>
-                <h2 id="schedule-dialog-title" class="text-3xl font-bold tracking-tight sm:text-4xl">Tambah Jadwal</h2>
+                <h2 id="schedule-dialog-title" class="text-3xl font-bold tracking-tight sm:text-4xl">{{ $oldSchedule ? 'Edit Jadwal' : 'Tambah Jadwal' }}</h2>
             </header>
 
             <p class="mt-10 text-lg leading-relaxed text-muted">
@@ -166,7 +185,7 @@
                 <label class="block space-y-2">
                     <span class="text-lg font-semibold">Durasi (menit)</span>
                     <span class="relative block">
-                        <input id="schedule-duration" name="durasi" type="number" min="1" inputmode="numeric" value="{{ old('durasi', '2') }}" aria-invalid="@error('durasi') true @else false @enderror" @if ($errors->has('durasi')) aria-describedby="schedule-duration-error" @endif @class(['h-[5.25rem] w-full rounded-2xl border bg-background px-5 pr-16 text-3xl font-medium outline-none focus:ring-2', 'border-accent-red bg-accent-red-soft text-accent-red focus:border-accent-red focus:ring-accent-red/20' => $errors->has('durasi'), 'border-border text-primary-dark focus:border-primary focus:ring-primary/20' => ! $errors->has('durasi')])>
+                        <input id="schedule-duration" name="durasi" type="number" min="1" max="120" inputmode="numeric" value="{{ old('durasi', '2') }}" aria-invalid="@error('durasi') true @else false @enderror" @if ($errors->has('durasi')) aria-describedby="schedule-duration-error" @endif @class(['h-[5.25rem] w-full rounded-2xl border bg-background px-5 pr-16 text-3xl font-medium outline-none focus:ring-2', 'border-accent-red bg-accent-red-soft text-accent-red focus:border-accent-red focus:ring-accent-red/20' => $errors->has('durasi'), 'border-border text-primary-dark focus:border-primary focus:ring-primary/20' => ! $errors->has('durasi')])>
                         <svg aria-hidden="true" class="pointer-events-none absolute right-5 top-1/2 h-7 w-7 -translate-y-1/2 {{ $errors->has('durasi') ? 'text-accent-red' : 'text-primary' }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M10 2h4M12 14l3-3"/>
                             <circle cx="12" cy="14" r="8"/>
@@ -178,23 +197,24 @@
                     @enderror
                 </label>
 
-                <fieldset class="space-y-3" aria-invalid="{{ $errors->has('hari') ? 'true' : 'false' }}" @if ($errors->has('hari')) aria-describedby="schedule-days-error" @endif>
+                <fieldset class="space-y-3" aria-invalid="{{ $dayError !== '' ? 'true' : 'false' }}" @if ($dayError !== '') aria-describedby="schedule-days-error" @endif>
                     <legend class="text-lg font-semibold">Hari</legend>
                     <div class="grid grid-cols-4 gap-3">
-                        @foreach ($weekDays as $day)
-                            @php($daySelected = in_array($day, $formDays, true))
+                        @foreach ($weekDays as $dayIndex => $day)
+                            @php($dayNumber = $dayIndex + 1)
+                            @php($daySelected = in_array($dayNumber, $formDays, true))
                             <div>
-                                <button type="button" data-schedule-day="{{ $day }}" aria-pressed="{{ $daySelected ? 'true' : 'false' }}" class="h-[4.5rem] w-full rounded-full px-4 text-base font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {{ $daySelected ? 'bg-primary-soft text-primary' : 'bg-background text-muted' }}">
+                                <button type="button" data-schedule-day="{{ $dayNumber }}" aria-pressed="{{ $daySelected ? 'true' : 'false' }}" class="h-[4.5rem] w-full rounded-full px-4 text-base font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary {{ $daySelected ? 'bg-primary-soft text-primary' : 'bg-background text-muted' }}">
                                     {{ $day }}
                                 </button>
-                                <input type="hidden" name="hari[]" value="{{ $day }}" data-schedule-day-input="{{ $day }}" @disabled(! $daySelected)>
+                                <input type="hidden" name="hari[]" value="{{ $dayNumber }}" data-schedule-day-input="{{ $dayNumber }}" @disabled(! $daySelected)>
                             </div>
                         @endforeach
                     </div>
                     <p id="schedule-repeat-label" class="pt-1 text-base text-muted">Berulang setiap hari</p>
-                    @error('hari')
-                        <span id="schedule-days-error" class="block text-base text-accent-red">{{ $message }}</span>
-                    @enderror
+                    @if ($dayError !== '')
+                        <span id="schedule-days-error" class="block text-base text-accent-red">{{ $dayError }}</span>
+                    @endif
                 </fieldset>
             </div>
 
@@ -207,7 +227,7 @@
                         </svg>
                         <div>
                             <h3 class="text-lg font-semibold">Periksa kembali isian Anda</h3>
-                            <p class="mt-1 text-base leading-relaxed">Gunakan format 24 jam dan durasi minimal 1 menit sebelum menyimpan.</p>
+                            <p class="mt-1 text-base leading-relaxed">Gunakan format 24 jam dan durasi 1 sampai 120 menit sebelum menyimpan.</p>
                         </div>
                     </div>
                 </aside>
@@ -247,7 +267,7 @@
                 <button type="button" data-close-schedule class="h-[4.5rem] rounded-full bg-primary-soft px-4 text-lg font-semibold text-primary transition hover:bg-primary/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                     Batal
                 </button>
-                <button type="button" data-save-schedule class="flex h-[4.5rem] items-center justify-center gap-3 rounded-full bg-primary px-4 text-lg font-semibold text-surface transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+                <button type="submit" data-save-schedule class="flex h-[4.5rem] items-center justify-center gap-3 rounded-full bg-primary px-4 text-lg font-semibold text-surface transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                     <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m5 12 5 5L20 7"/>
                     </svg>
@@ -268,6 +288,7 @@
         const scheduleTitle = document.getElementById('schedule-dialog-title');
         const dayButtons = Array.from(scheduleDialog.querySelectorAll('[data-schedule-day]'));
         const weekDays = @js($weekDays);
+        const dayNumbers = @js(range(1, 7));
         const schedules = @js($schedules);
         let selectedDays = @js($formDays);
 
@@ -280,21 +301,23 @@
             endTime.setHours(hours, minutes + duration);
             const endHour = String(endTime.getHours()).padStart(2, '0');
             const endMinute = String(endTime.getMinutes()).padStart(2, '0');
+            const selectedDayLabels = selectedDays.map((day) => weekDays[day - 1]);
 
             if (scheduleSummary) {
-                scheduleSummary.textContent = `Setiap ${selectedDays.join(', ')} pukul ${scheduleTime.value || '12:00'}–${endHour}.${endMinute}. Jadwal tidak bertabrakan dengan jadwal lain.`;
+                scheduleSummary.textContent = `Setiap ${selectedDayLabels.join(', ')} pukul ${scheduleTime.value || '12:00'}–${endHour}.${endMinute}. Bentrok diperiksa sebelum jadwal disimpan.`;
             }
-            repeatLabel.textContent = selectedDays.length === weekDays.length
+            repeatLabel.textContent = selectedDays.length === dayNumbers.length
                 ? 'Berulang setiap hari'
                 : selectedDays.length
-                    ? `Berulang setiap ${selectedDays.join(' · ')}`
+                    ? `Berulang setiap ${selectedDayLabels.join(' · ')}`
                     : 'Pilih minimal satu hari';
         };
 
         const setSelectedDays = (days) => {
-            selectedDays = weekDays.filter((day) => days.includes(day));
+            const selectedDayNumbers = days.map(Number);
+            selectedDays = dayNumbers.filter((day) => selectedDayNumbers.includes(day));
             dayButtons.forEach((button) => {
-                const isSelected = selectedDays.includes(button.dataset.scheduleDay);
+                const isSelected = selectedDays.includes(Number(button.dataset.scheduleDay));
                 button.setAttribute('aria-pressed', String(isSelected));
                 button.classList.toggle('bg-primary-soft', isSelected);
                 button.classList.toggle('text-primary', isSelected);
@@ -308,16 +331,12 @@
         const openScheduleForm = (schedule = null) => {
             scheduleForm.dataset.editing = schedule ? 'true' : 'false';
             scheduleTitle.textContent = schedule ? 'Edit Jadwal' : 'Tambah Jadwal';
+            scheduleForm.action = schedule?.url_ubah ?? @js(route('jadwal.store'));
+            scheduleForm.querySelector('#schedule-method').disabled = ! schedule;
+            scheduleForm.querySelector('#schedule-id').value = schedule?.id ?? '';
             scheduleTime.value = String(schedule?.jam ?? '12:00').replace('.', ':');
             scheduleDuration.value = schedule?.durasi ?? '2';
-
-            const days = Array.isArray(schedule?.hari)
-                ? schedule.hari
-                : typeof schedule?.hari === 'string'
-                    ? schedule.hari.split(/[,\s·]+/).filter(Boolean)
-                    : weekDays;
-
-            setSelectedDays(days);
+            setSelectedDays(schedule?.hari ?? dayNumbers);
             scheduleDialog.showModal();
             scheduleDialog.querySelector('[data-close-schedule]').focus();
         };
@@ -326,12 +345,12 @@
         document.querySelectorAll('[data-edit-schedule]').forEach((button) => {
             button.addEventListener('click', () => openScheduleForm(schedules[Number(button.dataset.editSchedule)]));
         });
-        scheduleDialog.querySelectorAll('[data-close-schedule], [data-save-schedule]').forEach((button) => {
+        scheduleDialog.querySelectorAll('[data-close-schedule]').forEach((button) => {
             button.addEventListener('click', () => scheduleDialog.close());
         });
         dayButtons.forEach((button) => {
             button.addEventListener('click', () => {
-                const day = button.dataset.scheduleDay;
+                const day = Number(button.dataset.scheduleDay);
                 setSelectedDays(selectedDays.includes(day)
                     ? selectedDays.filter((selectedDay) => selectedDay !== day)
                     : [...selectedDays, day]);
@@ -339,12 +358,60 @@
         });
         scheduleTime.addEventListener('input', updateScheduleSummary);
         scheduleDuration.addEventListener('input', updateScheduleSummary);
-        scheduleForm.addEventListener('submit', (event) => event.preventDefault());
         scheduleDialog.addEventListener('click', (event) => {
             if (event.target === scheduleDialog) {
                 scheduleDialog.close();
             }
         });
+        const toggleMessage = document.getElementById('schedule-toggle-message');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+        const updateToggle = (button, aktif) => {
+            button.setAttribute('aria-checked', String(aktif));
+            button.setAttribute(
+                'aria-label',
+                `${aktif ? 'Nonaktifkan' : 'Aktifkan'} jadwal ${button.dataset.jam}`,
+            );
+            button.classList.toggle('bg-primary', aktif);
+            button.classList.toggle('bg-border', ! aktif);
+            button.querySelector('span').classList.toggle('right-1', aktif);
+            button.querySelector('span').classList.toggle('left-1', ! aktif);
+        };
+
+        document.querySelectorAll('[data-schedule-toggle]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const aktifSebelumnya = button.getAttribute('aria-checked') === 'true';
+                toggleMessage.classList.add('hidden');
+                toggleMessage.textContent = '';
+                updateToggle(button, ! aktifSebelumnya);
+                button.disabled = true;
+
+                try {
+                    const response = await fetch(button.dataset.url, {
+                        method: 'PATCH',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                        },
+                    });
+                    const hasil = await response.json().catch(() => ({}));
+
+                    if (! response.ok || typeof hasil.aktif !== 'boolean') {
+                        throw new Error(hasil.pesan ?? 'Jadwal gagal diperbarui. Silakan coba lagi.');
+                    }
+
+                    window.location.reload();
+                } catch (error) {
+                    updateToggle(button, aktifSebelumnya);
+                    button.disabled = false;
+                    toggleMessage.textContent = error instanceof Error
+                        ? error.message
+                        : 'Jadwal gagal diperbarui. Silakan coba lagi.';
+                    toggleMessage.classList.remove('hidden');
+                }
+            });
+        });
+
         updateScheduleSummary();
         if (@json($showScheduleDialog)) {
             scheduleDialog.showModal();

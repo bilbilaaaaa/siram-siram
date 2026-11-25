@@ -12,6 +12,9 @@ Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/kontrol', [KontrolController::class, 'index'])->name('kontrol');
 
 Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal');
+Route::post('/jadwal', [JadwalController::class, 'store'])->name('jadwal.store');
+Route::put('/jadwal/{jadwal}', [JadwalController::class, 'update'])->name('jadwal.update');
+Route::patch('/jadwal/{jadwal}/aktif', [JadwalController::class, 'toggleAktif'])->name('jadwal.aktif');
 
 Route::get('/statistik', [StatistikController::class, 'index'])->name('statistik');
 
